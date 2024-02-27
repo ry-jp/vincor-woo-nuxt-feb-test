@@ -52,6 +52,11 @@ fragment CartFragment on Cart {
           }
         }
       }
+extraData {
+        id
+        key
+        value
+      }
     }
   }
 }

@@ -8,6 +8,9 @@ const productType = computed(() => (props.item.variation ? props.item.variation?
 const quantity = ref(props.item.quantity);
 const productSlug = computed(() => `/product/${formatURI(props.item.product.node.slug)}`);
 
+const extraData = JSON.parse(JSON.stringify(props.item.extraData));
+const itemAddons =  computed(() => JSON.parse(extraData ? extraData.find(el => el.key === 'addons').value : []));
+
 const updateQuantity = () => {
   updateItemQuantity(props.item.key, quantity.value);
 };
@@ -43,6 +46,9 @@ const removeItem = () => {
       <div class="flex-1">
         <NuxtLink class="leading-tight" :to="productSlug">{{ productType.name }}</NuxtLink>
         <ProductPrice class="mt-1 text-xs" :sale-price="productType.salePrice" :regular-price="productType.regularPrice" />
+<ul class="item-addons">
+          <li v-for="addon, index in itemAddons" key="index">{{ addon.value }} - ${{ addon.price }}</li>
+        </ul>
       </div>
       <input
         v-model.number="quantity"
@@ -68,5 +74,13 @@ input[type='number']::-webkit-outer-spin-button {
 
 .removeItem {
   @apply hidden md:inline-block;
+}
+
+.item-addons {
+  font-size: 10px;
+  list-style: auto;
+  padding-left: 16px;
+  padding-top: 16px;
+  color: inherit;
 }
 </style>
