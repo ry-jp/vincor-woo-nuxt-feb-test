@@ -36,7 +36,7 @@ watch(isFiltersActive, () => {
           type="number"
           placeholder="From"
           min="0" />
-        <label for="price-from" class="leading-none px-2 text-gray-400 absolute">€</label>
+        <label for="price-from" class="leading-none px-2 text-gray-400 absolute">$</label>
       </div>
       <div class="flex relative items-center">
         <input
@@ -46,7 +46,7 @@ watch(isFiltersActive, () => {
           type="number"
           placeholder="Up to"
           min="1" />
-        <label for="price-to" class="leading-none px-2 text-gray-400 absolute">€</label>
+        <label for="price-to" class="leading-none px-2 text-gray-400 absolute">$</label>
       </div>
       <div class="mx-1 mt-1 col-span-full">
         <Slider v-model="price" :tooltips="false" :min="0" :max="maxPrice" ariaLabelledby="price-from price-to" @change="applyPrice" />

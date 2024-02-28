@@ -22,7 +22,7 @@ const removeItem = () => {
 
 <template>
   <SwipeCard @remove="removeItem">
-    <div v-if="productType" class="flex items-center gap-3">
+    <div v-if="productType" class="flex items-center">
       <NuxtLink :to="productSlug">
         <img
           v-if="productType.image"
@@ -43,11 +43,12 @@ const removeItem = () => {
           :title="productType.image?.title || productType.name"
           loading="lazy" />
       </NuxtLink>
-      <div class="flex-1">
-        <NuxtLink class="leading-tight" :to="productSlug">{{ productType.name }}</NuxtLink>
-        <ProductPrice class="mt-1 text-xs" :sale-price="productType.salePrice" :regular-price="productType.regularPrice" />
-<ul class="item-addons">
-          <li v-for="addon, index in itemAddons" key="index">{{ addon.value }} - ${{ addon.price }}</li>
+      <div class="flex-1 px-6">
+        <NuxtLink class="leading-tight font-semibold " :to="productSlug">{{ productType.name }}</NuxtLink>
+        <ProductPrice class="mt-1 text-xs text-red-500 font-bold" :sale-price="productType.salePrice" :regular-price="productType.regularPrice" />
+        <p class=" pt-2 text-sm font-semibold">Addons:</p>
+<ul class="item-addons ">
+          <li v-for="addon, index in itemAddons" key="index" class="">{{ addon.value }} - ${{ addon.price }}</li>
         </ul>
       </div>
       <input
@@ -62,11 +63,12 @@ const removeItem = () => {
         <Icon name="ion:close-outline" class="removeItem hover:text-red-500 cursor-pointer p-1.5" size="34" />
       </button>
     </div>
+
   </SwipeCard>
 </template>
 
 <style scoped lang="postcss">
-/* alwsys show up and down buttons on number inpout */
+/* always show up and down buttons on number input */
 input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
   opacity: 1;
@@ -77,10 +79,11 @@ input[type='number']::-webkit-outer-spin-button {
 }
 
 .item-addons {
-  font-size: 10px;
+  font-size: 14px;
   list-style: auto;
   padding-left: 16px;
   padding-top: 16px;
   color: inherit;
+  word-break: break-word;
 }
 </style>

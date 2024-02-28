@@ -14,8 +14,8 @@ const { hideCategories } = defineProps({ hideCategories: { type: Boolean, defaul
     <div class="relative z-30 grid mb-12 space-y-8 divide-y">
       <PriceFilter />
       <CategoryFilter v-if="!hideCategories" />
-            <OnSaleFilter />
-            <LazyResetFiltersButton v-if="isFiltersActive" />
+      <OnSaleFilter />
+      <LazyResetFiltersButton v-if="isFiltersActive" />
     </div>
   </aside>
   <div class="fixed inset-0 z-50 hidden bg-black opacity-25 filter-overlay" @click="removeBodyClass('show-filters')"></div>
