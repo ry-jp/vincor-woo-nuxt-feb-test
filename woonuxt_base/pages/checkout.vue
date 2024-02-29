@@ -3,16 +3,14 @@ import { StripeElements, StripeElement } from 'vue-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
 const { t } = useI18n();
-const { query } = useRoute();
-const { cart, isUpdatingCart, paymentGateways } = useCart();
+const { cart, toggleCart, isUpdatingCart, paymentGateways } = useCart();
 const { customer, viewer } = useAuth();
 const { orderInput, isProcessingOrder, proccessCheckout } = useCheckout();
 const runtimeConfig = useRuntimeConfig();
 const stripeKey = runtimeConfig.public?.STRIPE_PUBLISHABLE_KEY;
-const stripeCardIsComplete = ref(false);
 
 const buttonText = ref(isProcessingOrder.value ? t('messages.general.processing') : t('messages.shop.checkoutButton'));
-
+const isCheckoutDisabled = computed(() => isProcessingOrder.value || isUpdatingCart.value || !orderInput.value.paymentMethod);
 
 const emailRegex = new RegExp('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}$');
 const isInvalidEmail = ref(false);
@@ -26,7 +24,6 @@ const elms = ref();
 
 // Initialize Stripe.js
 onBeforeMount(() => {
-  if (query.cancel_order) window.close();
   if (!stripeKey) {
     console.error('Stripe key is not set');
     return;
@@ -43,9 +40,8 @@ const payNow = async () => {
   try {
     if (orderInput.value.paymentMethod === 'stripe') {
       const cardElement = card.value.stripeElement;
-      const { source } = await elms.value.instance.createSource(cardElement);
+      const { source, error } = await elms.value.instance.createSource(cardElement);
       orderInput.value.metaData.push({ key: '_stripe_source_id', value: source.id });
-      orderInput.value.transactionId = source.created?.toString() || '';
     }
   } catch (error) {
     buttonText.value = t('messages.shop.placeOrder');
@@ -61,35 +57,6 @@ const checkEmailOnBlur = (email) => {
 const checkEmailOnInput = (email) => {
   if (email || isInvalidEmail.value) isInvalidEmail.value = !emailRegex.test(email);
 };
-
-/**
- * Watch orderInput.paymentMethod for stripe. If is stripe, add and event listener to .StripeElement to check if it's complete.
- * It will have the class .StripeElement--complete when it's complete. Then set stripeCardIsComplete to true.
- */
-watch(
-  () => orderInput.value.paymentMethod,
-  (newVal) => {
-    if (newVal === 'stripe') {
-      setTimeout(() => {
-        const stripeElement = document.querySelector('.StripeElement');
-        if (stripeElement) {
-          // Watch .StripeElement dom element. When it has the class .StripeElement--complete, set stripeCardIsComplete to true.
-          const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-              if (mutation.attributeName === 'class') {
-                const attributeValue = mutation.target.getAttribute(mutation.attributeName);
-                stripeCardIsComplete.value = attributeValue.includes('StripeElement--complete');
-              }
-            });
-          });
-          observer.observe(stripeElement, { attributes: true });
-        }
-      }, 1000);
-    } else {
-      stripeCardIsComplete.value = false;
-    }
-  },
-);
 </script>
 
 <template>
@@ -136,41 +103,8 @@ watch(
             <BillingDetails v-model="customer.billing" :sameAsShippingAddress="orderInput.shipToDifferentAddress" />
           </div>
 
-          <label for="shipToDifferentAddress" class="flex items-center gap-2">
-            <span>{{ $t('messages.billing.differentAddress') }}</span>
-            <input id="shipToDifferentAddress" v-model="orderInput.shipToDifferentAddress" type="checkbox" name="shipToDifferentAddress" />
-          </label>
-
-          <Transition name="scale-y" mode="out-in">
-            <div v-show="orderInput.shipToDifferentAddress">
-              <h2 class="mb-4 text-xl font-semibold">{{ $t('messages.general.shippingDetails') }}</h2>
-              <ShippingDetails v-model="customer.shipping" />
-            </div>
-          </Transition>
-
-          <!-- Shipping methods -->
-          <div v-if="cart.availableShippingMethods.length">
-            <h3 class="mb-4 text-xl font-semibold">{{ $t('messages.general.shippingSelect') }}</h3>
-            <ShippingOptions :options="cart.availableShippingMethods[0].rates" :active-option="cart.chosenShippingMethods[0]" />
-          </div>
 
           <!-- Pay methods -->
-          <div v-if="paymentGateways.length" class="mt-2 col-span-full">
-            <h2 class="mb-4 text-xl font-semibold">{{ $t('messages.billing.paymentOptions') }}</h2>
-            <PaymentOptions v-model="orderInput.paymentMethod" class="mb-4" :paymentGateways="paymentGateways" />
-
-            <Transition name="scale-y" mode="out-in">
-              <StripeElements
-                v-show="orderInput.paymentMethod == 'stripe'"
-                v-slot="{ elements, instance }"
-                ref="elms"
-                :stripe-key="stripeKey"
-                :instance-options="instanceOptions"
-                :elements-options="elementsOptions">
-                <StripeElement ref="card" :elements="elements" :options="cardOptions" />
-              </StripeElements>
-            </Transition>
-          </div>
 
           <!-- Order note -->
           <div>
@@ -187,9 +121,10 @@ watch(
 
         <OrderSummary>
           <button
-            class="flex items-center justify-center w-full gap-3 p-3 mt-4 font-semibold text-center text-white rounded-lg shadow-md bg-primary hover:bg-primary-dark disabled:cursor-not-allowed disabled:bg-gray-400"
+            class="flex items-center justify-center w-full gap-3 p-3 mt-4 font-semibold text-center text-white rounded-lg shadow-md bg-primary hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
             >
-            {{ buttonText }}<LoadingIcon v-if="isProcessingOrder" color="#fff" size="18" />
+            {{ buttonText }}
+            <LoadingIcon v-if="isProcessingOrder" color="#fff" size="18" />
           </button>
         </OrderSummary>
       </form>

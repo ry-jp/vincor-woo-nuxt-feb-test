@@ -1,7 +1,6 @@
 <script setup>
 const props = defineProps({
-  modelValue: { type: String, required: true, default: 'stripe' },
-  paymentGateways: { type: Array, required: true },
+  paymentGateways: { type: Array, required: false },
 });
 
 const paymentMethod = toRef(props, 'modelValue');
