@@ -6,7 +6,7 @@ const { data: featuredProductsData } = await useAsyncGql('getProducts', { first:
 
 useSeoMeta({
   title: `Home`,
-  ogTitle: `WooNuxt`,
+  ogTitle: `Vincor Ltd.`,
   description: `This is an example of a WooNuxt store. It provides a modern, fast, and SEO friendly ecommerce store built with Nuxt and WooCommerce.`,
   ogDescription: `This is an example of a WooNuxt store. It provides a modern, fast, and SEO friendly ecommerce store built with Nuxt and WooCommerce.`,
   ogImage: `https://user-images.githubusercontent.com/5116925/218879668-f4c1f9fd-bef4-44b0-bc7f-e87d994aa3a1.png`,
