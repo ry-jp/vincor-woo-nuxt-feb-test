@@ -3,29 +3,54 @@ const props = defineProps({
   product: { type: Object, default: null },
 });
 
+const { data } = useAsyncGql('getPosts');
+const posts = ref([]);
+
+if (data.value && data.value.posts) {
+  posts.value = data.value.posts.edges.map(edge => edge.node);
+}
+
+const tabPosts = computed(() => {
+  return posts.value.filter(post => 
+    post.tags.edges.some(edge => edge.node.name === 'tab')
+  );
+});
+
+const specsPosts = computed(() => {
+  return posts.value.filter(post => 
+    post.tags.edges.some(edge => edge.node.name === 'specs')
+  );
+});
+
 const show = ref(0);
+
+// Move 'Specifications' tab to the beginning
+if (tabPosts.value.length > 0) {
+  const specsTab = tabPosts.value.find(post => post.title === 'Specifications');
+  if (specsTab) {
+    const specsTabIndex = tabPosts.value.indexOf(specsTab);
+    tabPosts.value.splice(specsTabIndex, 1);
+    tabPosts.value.unshift(specsTab);
+  }
+}
+
+const visibleTabPosts = computed(() => {
+  return tabPosts.value.filter((post, index) => index === show.value);
+});
 </script>
 
 <template>
   <div>
     <nav class="border-b flex gap-8 tabs">
-      <a :class="show === 0 ? 'active' : ''" @click.prevent="show = 0">{{ $t('messages.shop.productDescription') }}</a>
-      <a :class="show === 1 ? 'active' : ''" @click.prevent="show = 1">Document</a>
+      <a :class="show === index ? 'active' : ''" v-for="(post, index) in tabPosts" :key="post.id" @click.prevent="show = index">{{ post.title }}</a>
     </nav>
     <div class="tab-contents">
-      <div v-if="show === 0" class="font-light mt-8 prose" v-html="product.description"></div>
-      <div v-if="show === 1">
-        <div class="flex flex-wrap gap-32 items-start">
-          <div class="flex max-w-sm gap-4 prose">
-                      </div>
-          <div class="divide-y flex-1">
-            <p class="text-red-600 text-lg">{{ product.category }}</p>
-                    <p class="text-red-600 text-lg">{{ product.sku }}</p>
-                  <div>
-                  <iframe :src="`https://vincor.com/wp-content/pdf/products/${product.sku}.pdf`" width="100%" height="1024">
-  </iframe>
-
-            </div>
+      <div v-for="(post, index) in visibleTabPosts" :key="post.id" class="font-light mt-8 prose">
+        <div v-if="post.tags.edges.some(edge => edge.node.name === product.sku)">
+          <h2>Content with matching SKU:</h2>
+          <div v-for="post in posts" :key="post.id">
+            <h3 v-if="post.title === visibleTabPosts[index].title">{{ post.title }}</h3>
+            <p v-if="post.title === visibleTabPosts[index].title" v-html="post.content"></p>
           </div>
         </div>
       </div>
