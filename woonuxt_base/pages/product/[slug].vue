@@ -245,11 +245,11 @@ function mergeArrayValuesForCheckboxType(selectedAddons:any, allAddons:any) {
           </div>
         </div>
 
+
         <hr />
 
         <div class="flex flex-wrap gap-4">
           <WishlistButton :product="product" />
-          <ShareButton :product="product" />
         </div>
       </div>
     </div>

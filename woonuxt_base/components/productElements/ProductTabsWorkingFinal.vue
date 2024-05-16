@@ -13,8 +13,6 @@
     </nav>
     <div class="tab-contents">
       <div class="font-light mt-8 prose" v-html="activeTab" />
-      <!-- <div v-if="activeTab.title === 'Datasheet'" v-html="activeTab.content"></div>
-<div v-else>{{ activeTab.content }}</div> -->
     </div>
   </div>
 </template>
@@ -48,40 +46,26 @@ export default {
     });
 
     const tabPosts = computed(() => {
-  return posts.value
-    .filter(post => post.tags.includes(props.productSku))
-    .sort((a, b) => {
-      const aTagNumber = a.tags.find(tag => !isNaN(tag));
-      const bTagNumber = b.tags.find(tag => !isNaN(tag));
-      if (a.title === 'Datasheet') return 1;
-      if (b.title === 'Datasheet') return -1;
-      if (a.title === 'Specifications') return -1;
-      if (b.title === 'Specifications') return 1;
-      if (aTagNumber && bTagNumber) {
-        return parseInt(aTagNumber) - parseInt(bTagNumber);
-      }
-      return 0;
+      let filteredPosts = posts.value.filter((post) =>
+        post.tags.some((tag) => tag === props.productSku)
+      );
+
+      filteredPosts.sort((a, b) => (a.title === 'Specifications' ? -1 : b.title === 'Specifications' ? 1 : 0));
+
+return filteredPosts;
     });
-});
 
     const showTab = (index) => {
       show.value = index;
       activeTab.value = tabPosts.value[index].content;
     };
 
-//     const showTab = (index) => {
-//   show.value = index;
-//   activeTab.value = tabPosts.value[index];
-// };
-
     onMounted(() => {
       if (tabPosts.value.length > 0) {
         showTab(0);
       }
     });
-    console.log('posts:', posts.value);
-console.log('productSku:', props.productSku);
-console.log('tabPosts:', tabPosts.value);
+
     return { tabPosts, activeTab, showTab, show };
   },
 };
