@@ -9,12 +9,8 @@ const props = defineProps({
 const route = useRoute();
 const isOpen = ref(props.open);
 const categories = ref([]);
-const selectedTerms = ref([]);
 
-// Fetch filters
-const { getFilter, setFilter, isFiltersActive } = await useFiltering();
-
-// Fetch categories and process them on mount
+// Load and process categories using $fetch
 onMounted(async () => {
   try {
     const response = await $fetch('https://vincor.com/graphql', {
@@ -30,11 +26,11 @@ onMounted(async () => {
                 node {
                   id
                   name
-                  slug
                   parent {
                     node {
                       id
                       name
+                      slug
                     }
                   }
                   children {
@@ -47,11 +43,13 @@ onMounted(async () => {
                           node {
                             id
                             name
+                            slug
                           }
                         }
                       }
                     }
                   }
+                  slug
                   image {
                     sourceUrl(size: MEDIUM_LARGE)
                     altText
@@ -67,26 +65,25 @@ onMounted(async () => {
     });
 
     categories.value = processCategories(response.data.productCategories.edges);
-    selectedTerms.value = getFilter('category') || [];
     console.log('Processed categories for rendering:', categories.value);
-    console.log('Initial selected terms:', selectedTerms.value);
   } catch (error) {
     console.error('Error fetching product categories:', error);
   }
 });
 
-// Process categories
 function processCategories(edges) {
   const categoriesMap = new Map();
 
   edges.forEach(edge => {
     const parentCategory = edge.node;
 
+    // Initialize parent node if not already in the map
     if (!parentCategory.parent) {
       if (!categoriesMap.has(parentCategory.id)) {
         categoriesMap.set(parentCategory.id, { ...parentCategory, children: [], showChildren: false });
       }
 
+      // Process children and link them to the parent
       if (parentCategory.children && parentCategory.children.edges) {
         parentCategory.children.edges.forEach(childEdge => {
           const childNode = childEdge.node;
@@ -99,63 +96,73 @@ function processCategories(edges) {
     }
   });
 
+  // Extract only the top-level categories (those without a parent within the same list)
   return Array.from(categoriesMap.values()).filter(category => !category.parent);
 }
 
-// Watch filters for changes
+const { getFilter, setFilter, isFiltersActive } = await useFiltering();
+const selectedTerms = ref(getFilter('category') || []);
+
+const categorySlug = route.params.categorySlug;
+if (categorySlug) selectedTerms.value = [categorySlug];
+
 watch(isFiltersActive, () => {
   if (!isFiltersActive.value) selectedTerms.value = [];
-  console.log('Updated selected terms after isFiltersActive change:', selectedTerms.value);
 });
 
-// Handle checkbox change
 const checkboxChanged = (childSlug) => {
-  if (selectedTerms.value.includes(childSlug)) {
-    selectedTerms.value = selectedTerms.value.filter(slug => slug !== childSlug);
+  console.log('Checkbox changed:', childSlug);
+  const index = selectedTerms.value.indexOf(childSlug);
+  if (index > -1) {
+    selectedTerms.value.splice(index, 1);
   } else {
     selectedTerms.value.push(childSlug);
   }
-  setFilter('category', selectedTerms.value);
-  console.log('Updated selected terms after checkbox change:', selectedTerms.value);
+  console.log('Updated selected terms:', selectedTerms.value);
+  setFilter('category', [...selectedTerms.value]);
 };
 
-// Toggle category visibility
 const toggleVisibility = (category) => {
   category.showChildren = !category.showChildren;
-  console.log(`Toggled visibility for category: ${category.name}, showChildren: ${category.showChildren}`);
+  console.log('Toggled visibility for category:', category.name, ', showChildren:', category.showChildren);
 };
 
-// Select parent category
 const parentCategorySelected = (category) => {
   selectedTerms.value = [category.slug];
   setFilter('category', selectedTerms.value);
-  category.showChildren = !category.showChildren; // Automatically toggle visibility of children
   console.log('Parent category selected:', category.name);
 };
 </script>
 
 <template>
   <div v-if="categories.length">
+    <!-- Dropdown header for parent categories -->
     <div class="cursor-pointer flex font-semibold mt-8 justify-between items-center" @click="isOpen = !isOpen">
       <span>{{ label || $t('messages.shop.category', 2) }}</span>
-      <Icon name="ion:chevron-down-outline" class="transform" :class="isOpen ? 'rotate-180' : ''" />
+      <Icon name="ion:chevron-down-outline" class="transform transition-transform duration-300" :class="isOpen ? 'rotate-180' : ''" />
     </div>
-    <div v-show="isOpen" class="mt-3">
-      <div v-for="category in categories" :key="category.id" class="category-block">
-        <div @click="parentCategorySelected(category)" class="parent-category">
-          {{ category.name }}
-          <Icon name="ion:chevron-forward-outline" :class="category.showChildren ? 'rotate-90' : ''" />
-        </div>
-        <div v-show="category.showChildren" class="child-categories">
-          <div v-for="child in category.children" :key="child.id">
-            <input :id="child.slug" v-model="selectedTerms" type="checkbox" :value="child.slug" @change="checkboxChanged(child.slug)">
-            <label :for="child.slug">{{ child.name }}
-              <span v-if="showCount">({{ child.count || 0 }})</span>
-            </label>
+    <transition name="fade">
+      <div v-show="isOpen" class="mt-3">
+        <!-- Parent categories -->
+        <div v-for="category in categories" :key="category.id" class="category-block">
+          <div @click="() => { parentCategorySelected(category); toggleVisibility(category); }" class="parent-category">
+            {{ category.name }}
+            <Icon name="ion:chevron-forward-outline" class="transform transition-transform duration-300" :class="category.showChildren ? 'rotate-90' : ''" />
           </div>
+          <!-- Child categories -->
+          <transition name="fade">
+            <div v-show="category.showChildren" class="child-categories">
+              <div v-for="child in category.children" :key="child.id">
+                <input :id="child.slug" v-model="selectedTerms" type="checkbox" :value="child.slug" @change="() => checkboxChanged(child.slug)">
+                <label :for="child.slug">{{ child.name }}
+                  <span v-if="showCount">({{ child.count || 0 }})</span>
+                </label>
+              </div>
+            </div>
+          </transition>
         </div>
       </div>
-    </div>
+    </transition>
   </div>
 </template>
 
@@ -178,5 +185,11 @@ const parentCategorySelected = (category) => {
 }
 .rotate-90 {
   transform: rotate(90deg);
+}
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.5s;
+}
+.fade-enter, .fade-leave-to {
+  opacity: 0;
 }
 </style>
