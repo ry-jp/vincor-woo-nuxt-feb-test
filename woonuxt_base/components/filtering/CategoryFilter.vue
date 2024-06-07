@@ -66,6 +66,22 @@ onMounted(async () => {
 
     categories.value = processCategories(response.data.productCategories.edges);
     console.log('Processed categories for rendering:', categories.value);
+
+    // Load selected categories and visibility states from localStorage
+    const storedSelectedTerms = localStorage.getItem('selectedCategories');
+    if (storedSelectedTerms) {
+      selectedTerms.value = JSON.parse(storedSelectedTerms);
+    }
+
+    const storedVisibilityStates = localStorage.getItem('categoryVisibilityStates');
+    if (storedVisibilityStates) {
+      const visibilityStates = JSON.parse(storedVisibilityStates);
+      categories.value.forEach(category => {
+        if (visibilityStates[category.id]) {
+          category.showChildren = visibilityStates[category.id];
+        }
+      });
+    }
   } catch (error) {
     console.error('Error fetching product categories:', error);
   }
@@ -103,6 +119,19 @@ function processCategories(edges) {
 const { getFilter, setFilter, isFiltersActive } = await useFiltering();
 const selectedTerms = ref(getFilter('category') || []);
 
+// Save selected categories and visibility states to localStorage whenever they change
+watch(selectedTerms, (newTerms) => {
+  localStorage.setItem('selectedCategories', JSON.stringify(newTerms));
+});
+
+watch(categories, (newCategories) => {
+  const visibilityStates = newCategories.reduce((acc, category) => {
+    acc[category.id] = category.showChildren;
+    return acc;
+  }, {});
+  localStorage.setItem('categoryVisibilityStates', JSON.stringify(visibilityStates));
+}, { deep: true });
+
 const categorySlug = route.params.categorySlug;
 if (categorySlug) selectedTerms.value = [categorySlug];
 
@@ -123,6 +152,11 @@ const checkboxChanged = (childSlug) => {
 };
 
 const toggleVisibility = (category) => {
+  categories.value.forEach(cat => {
+    if (cat.id !== category.id) {
+      cat.showChildren = false;
+    }
+  });
   category.showChildren = !category.showChildren;
   console.log('Toggled visibility for category:', category.name, ', showChildren:', category.showChildren);
 };
@@ -153,7 +187,11 @@ const parentCategorySelected = (category) => {
           <transition name="fade">
             <div v-show="category.showChildren" class="child-categories">
               <div v-for="child in category.children" :key="child.id">
-                <input :id="child.slug" v-model="selectedTerms" type="checkbox" :value="child.slug" @change="() => checkboxChanged(child.slug)">
+                <input  :id="child.slug" 
+                  :checked="selectedTerms.includes(child.slug)" 
+                  type="checkbox" 
+                  :value="child.slug" 
+                  @change="() => { checkboxChanged(child.slug); filterProductsByCategory(child.slug) }">
                 <label :for="child.slug">{{ child.name }}
                   <span v-if="showCount">({{ child.count || 0 }})</span>
                 </label>
