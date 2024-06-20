@@ -1,4 +1,10 @@
 <script setup>
+import { ref, watch, onMounted, inject } from 'vue';
+import { useRoute } from 'vue-router';
+import { useFiltering } from '@/composables/useFiltering';  // Ensure correct path to the composable
+
+const { getFilter, setFilter, isFiltersActive } = useFiltering();
+
 const props = defineProps({
   label: { type: String, default: '' },
   hideEmpty: { type: Boolean, default: false },
@@ -9,6 +15,15 @@ const props = defineProps({
 const route = useRoute();
 const isOpen = ref(props.open);
 const categories = ref([]);
+const selectedTerms = ref([]);
+const updateProductList = inject('updateProductList');  // Inject the updateProductList function
+
+// Define the filterProductsByCategory function
+const filterProductsByCategory = () => {
+  console.log('Filtering products by categories:', selectedTerms.value);
+  setFilter('category', selectedTerms.value);
+  updateProductList();  // Ensure the product list is updated
+};
 
 // Load and process categories using $fetch
 onMounted(async () => {
@@ -72,6 +87,7 @@ onMounted(async () => {
     if (storedSelectedTerms) {
       selectedTerms.value = JSON.parse(storedSelectedTerms);
     }
+    console.log('Loaded selected terms from localStorage:', selectedTerms.value);
 
     const storedVisibilityStates = localStorage.getItem('categoryVisibilityStates');
     if (storedVisibilityStates) {
@@ -82,6 +98,9 @@ onMounted(async () => {
         }
       });
     }
+
+    // Apply filters initially
+    filterProductsByCategory();
   } catch (error) {
     console.error('Error fetching product categories:', error);
   }
@@ -116,13 +135,12 @@ function processCategories(edges) {
   return Array.from(categoriesMap.values()).filter(category => !category.parent);
 }
 
-const { getFilter, setFilter, isFiltersActive } = await useFiltering();
-const selectedTerms = ref(getFilter('category') || []);
-
 // Save selected categories and visibility states to localStorage whenever they change
 watch(selectedTerms, (newTerms) => {
   localStorage.setItem('selectedCategories', JSON.stringify(newTerms));
-});
+  console.log('Updated selected terms in watch:', selectedTerms.value);
+  filterProductsByCategory();  // Ensure filtering is triggered
+}, { deep: true });
 
 watch(categories, (newCategories) => {
   const visibilityStates = newCategories.reduce((acc, category) => {
@@ -134,6 +152,15 @@ watch(categories, (newCategories) => {
 
 const categorySlug = route.params.categorySlug;
 if (categorySlug) selectedTerms.value = [categorySlug];
+
+watch(route, (newRoute) => {
+  const newCategorySlug = newRoute.params.categorySlug;
+  if (newCategorySlug) {
+    selectedTerms.value = [newCategorySlug];
+    console.log('Route changed, new selected terms:', selectedTerms.value);
+    filterProductsByCategory();  // Ensure filtering is triggered when route changes
+  }
+});
 
 watch(isFiltersActive, () => {
   if (!isFiltersActive.value) selectedTerms.value = [];
@@ -148,7 +175,7 @@ const checkboxChanged = (childSlug) => {
     selectedTerms.value.push(childSlug);
   }
   console.log('Updated selected terms:', selectedTerms.value);
-  setFilter('category', [...selectedTerms.value]);
+  filterProductsByCategory();  // Ensure filtering is triggered when checkbox changes
 };
 
 const toggleVisibility = (category) => {
@@ -163,7 +190,7 @@ const toggleVisibility = (category) => {
 
 const parentCategorySelected = (category) => {
   selectedTerms.value = [category.slug];
-  setFilter('category', selectedTerms.value);
+  filterProductsByCategory();  // Ensure filtering is triggered when parent category is selected
   console.log('Parent category selected:', category.name);
 };
 </script>
@@ -191,7 +218,7 @@ const parentCategorySelected = (category) => {
                   :checked="selectedTerms.includes(child.slug)" 
                   type="checkbox" 
                   :value="child.slug" 
-                  @change="() => { checkboxChanged(child.slug); filterProductsByCategory(child.slug) }">
+                  @change="() => { checkboxChanged(child.slug) }">
                 <label :for="child.slug">{{ child.name }}
                   <span v-if="showCount">({{ child.count || 0 }})</span>
                 </label>

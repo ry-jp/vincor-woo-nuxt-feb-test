@@ -1,4 +1,5 @@
 <script setup>
+import { useFiltering } from '@/composables/useFiltering';  // Ensure correct path to the composable
 const { getFilter, setFilter, isFiltersActive } = useFiltering();
 
 const { filterSlug, label, hideEmpty, showCount, open } = defineProps({

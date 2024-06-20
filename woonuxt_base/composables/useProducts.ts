@@ -1,3 +1,5 @@
+
+
 let allProducts = [] as Product[];
 
 export function useProducts() {
@@ -26,15 +28,28 @@ export function useProducts() {
     // return all products if no filters are active
     if (!isFiltersActive.value && !isSearchActive.value && !isSortingActive.value) {
       products.value = allProducts;
+      console.log('No filters, search, or sorting active. Returning all products.');
       return;
     }
 
     // otherwise, apply filter, search and sorting in that order
     try {
       let newProducts = [...allProducts];
-      if (isFiltersActive.value) newProducts = filterProducts(newProducts);
-      if (isSearchActive.value) newProducts = searchProducts(newProducts);
-      if (isSortingActive.value) newProducts = sortProducts(newProducts);
+      if (isFiltersActive.value) {
+        console.log('Applying filters...');
+        newProducts = filterProducts(newProducts);
+        console.log('Filtered products:', newProducts);
+      }
+      if (isSearchActive.value) {
+        console.log('Applying search...');
+        newProducts = searchProducts(newProducts);
+        console.log('Searched products:', newProducts);
+      }
+      if (isSortingActive.value) {
+        console.log('Applying sorting...');
+        newProducts = sortProducts(newProducts);
+        console.log('Sorted products:', newProducts);
+      }
 
       products.value = newProducts;
     } catch (error) {

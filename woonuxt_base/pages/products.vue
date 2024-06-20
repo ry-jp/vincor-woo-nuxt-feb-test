@@ -1,8 +1,14 @@
 <script setup>
-const { setProducts, updateProductList } = useProducts();
+import { provide } from 'vue';
+import { useFiltering } from '@/composables/useFiltering';  // Ensure correct path to the composable
+import { useProducts } from '@/composables/useProducts';  // Ensure correct path to the composable
+import { useRoute } from 'vue-router';
+
+const { setProducts, updateProductList, products } = useProducts();
 const route = useRoute();
 
 const { isQueryEmpty } = useHelpers();
+const { getFilter, setFilter, isFiltersActive, filterProducts } = useFiltering();  // Use useFiltering here
 
 const { data } = await useAsyncGql('getProducts');
 const allProducts = data.value?.products?.nodes ?? [];
@@ -24,6 +30,12 @@ useHead({
   title: `Products`,
   meta: [{ hid: 'description', name: 'description', content: 'Products' }],
 });
+
+// Provide the updateProductList function to child components
+provide('updateProductList', (selectedTerms) => {
+  const newProducts = filterProducts(products.value);
+  setProducts(newProducts);
+});
 </script>
 
 <template>
@@ -39,5 +51,5 @@ useHead({
       <ProductGrid />
     </div>
   </div>
-  <NoProductsFound v-else>Could not fecth products from your store. Please check your configuration.</NoProductsFound>
+  <NoProductsFound v-else>Could not fetch products from your store. Please check your configuration.</NoProductsFound>
 </template>
