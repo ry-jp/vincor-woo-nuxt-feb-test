@@ -67,25 +67,31 @@ export function useFiltering() {
     console.log('Filtering products with query:', filterQuery.value);
     console.log('Products before filtering:', products);
 
+    const categoryFilter = getFilter('category') || [];
+    const priceRange = getFilter('price') || [];
+    const starRating = getFilter('rating') || [];
+    const globalProductAttributes = runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES?.map((attribute: any) => attribute.slug) || [];
+    const onSale = getFilter('sale') || [];
+
     return products.filter((product) => {
-      const category = getFilter('category') || [];
-      console.log('Applying category filter:', category);
-      const categoryCondition = category.length ? product.productCategories?.nodes?.some((node: any) => category.includes(node.slug)) : true;
+      console.log('Checking product:', product.name);
+
+      const categoryCondition = categoryFilter.length
+        ? product.productCategories?.nodes?.some((node: any) => categoryFilter.includes(node.slug))
+        : true;
       console.log('Category condition:', categoryCondition);
 
-      const priceRange = getFilter('price') || [];
-      console.log('Applying price filter:', priceRange);
       const productPrice = product.rawPrice ? parseFloat([...product.rawPrice.split(',')].reduce((a, b) => String(Math.max(Number(a), Number(b))))) : 0;
-      const priceCondition = priceRange.length ? productPrice >= parseFloat(priceRange[0]) && productPrice <= parseFloat(priceRange[1]) : true;
+      const priceCondition = priceRange.length
+        ? productPrice >= parseFloat(priceRange[0]) && productPrice <= parseFloat(priceRange[1])
+        : true;
       console.log('Price condition:', priceCondition);
 
-      const starRating = getFilter('rating') || [];
-      console.log('Applying rating filter:', starRating);
-      const ratingCondition = starRating.length ? (product?.averageRating ?? 0) >= parseFloat(starRating[0]) : true;
+      const ratingCondition = starRating.length
+        ? (product?.averageRating ?? 0) >= parseFloat(starRating[0])
+        : true;
       console.log('Rating condition:', ratingCondition);
 
-      const globalProductAttributes = runtimeConfig?.public?.GLOBAL_PRODUCT_ATTRIBUTES?.map((attribute: any) => attribute.slug) || [];
-      console.log('Applying attribute filters:', globalProductAttributes);
       const attributeCondition = globalProductAttributes
         .map((attribute: string) => {
           const attributeValues = getFilter(attribute) || [];
@@ -95,8 +101,6 @@ export function useFiltering() {
         .every((condition: any) => condition);
       console.log('Attribute condition:', attributeCondition);
 
-      const onSale = getFilter('sale') || [];
-      console.log('Applying sale filter:', onSale);
       const saleItemsOnlyCondition = onSale.length ? product.onSale : true;
       console.log('Sale condition:', saleItemsOnlyCondition);
 

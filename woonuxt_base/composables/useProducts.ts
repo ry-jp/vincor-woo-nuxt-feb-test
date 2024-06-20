@@ -1,5 +1,4 @@
 
-
 let allProducts = [] as Product[];
 
 export function useProducts() {
