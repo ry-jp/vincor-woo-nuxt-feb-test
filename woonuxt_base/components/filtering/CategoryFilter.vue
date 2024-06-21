@@ -11,11 +11,9 @@ const isOpen = ref(props.open);
 const categories = ref([]);
 
 const filterProductsByCategory = (categoryId) => {
-  // Implementation of filtering logic
   console.log(`Filtering products by category: ${categoryId}`);
 };
 
-// Load and process categories using $fetch
 onMounted(async () => {
   try {
     const response = await $fetch('https://vincor.com/graphql', {
@@ -72,7 +70,6 @@ onMounted(async () => {
     categories.value = processCategories(response.data.productCategories.edges);
     console.log('Processed categories for rendering:', categories.value);
 
-    // Load selected categories and visibility states from localStorage
     const storedSelectedTerms = localStorage.getItem('selectedCategories');
     if (storedSelectedTerms) {
       selectedTerms.value = JSON.parse(storedSelectedTerms);
@@ -98,13 +95,11 @@ function processCategories(edges) {
   edges.forEach(edge => {
     const parentCategory = edge.node;
 
-    // Initialize parent node if not already in the map
     if (!parentCategory.parent) {
       if (!categoriesMap.has(parentCategory.id)) {
         categoriesMap.set(parentCategory.id, { ...parentCategory, children: [], showChildren: false });
       }
 
-      // Process children and link them to the parent
       if (parentCategory.children && parentCategory.children.edges) {
         parentCategory.children.edges.forEach(childEdge => {
           const childNode = childEdge.node;
@@ -117,14 +112,12 @@ function processCategories(edges) {
     }
   });
 
-  // Extract only the top-level categories (those without a parent within the same list)
   return Array.from(categoriesMap.values()).filter(category => !category.parent);
 }
 
 const { getFilter, setFilter, isFiltersActive } = await useFiltering();
 const selectedTerms = ref(getFilter('category') || []);
 
-// Save selected categories and visibility states to localStorage whenever they change
 watch(selectedTerms, (newTerms) => {
   localStorage.setItem('selectedCategories', JSON.stringify(newTerms));
 });
@@ -144,16 +137,23 @@ watch(isFiltersActive, () => {
   if (!isFiltersActive.value) selectedTerms.value = [];
 });
 
-const checkboxChanged = (childSlug) => {
+const checkboxChanged = (childSlug, parentSlug) => {
   console.log('Checkbox changed:', childSlug);
   const index = selectedTerms.value.indexOf(childSlug);
   if (index > -1) {
     selectedTerms.value.splice(index, 1);
   } else {
     selectedTerms.value.push(childSlug);
+
+    // Remove the parent category if a child is selected
+    const parentIndex = selectedTerms.value.indexOf(parentSlug);
+    if (parentIndex > -1) {
+      selectedTerms.value.splice(parentIndex, 1);
+    }
   }
   console.log('Updated selected terms:', selectedTerms.value);
   setFilter('category', [...selectedTerms.value]);
+  filterProductsByCategory(childSlug);
 };
 
 const toggleVisibility = (category) => {
@@ -175,20 +175,17 @@ const parentCategorySelected = (category) => {
 
 <template>
   <div v-if="categories.length">
-    <!-- Dropdown header for parent categories -->
     <div class="cursor-pointer flex font-semibold mt-8 justify-between items-center" @click="isOpen = !isOpen">
       <span>{{ label || $t('messages.shop.category', 2) }}</span>
       <Icon name="ion:chevron-down-outline" class="transform transition-transform duration-300" :class="isOpen ? 'rotate-180' : ''" />
     </div>
     <transition name="fade">
       <div v-show="isOpen" class="mt-3">
-        <!-- Parent categories -->
         <div v-for="category in categories" :key="category.id" class="category-block">
           <div @click="() => { parentCategorySelected(category); toggleVisibility(category); }" class="parent-category">
             {{ category.name }}
             <Icon name="ion:chevron-forward-outline" class="transform transition-transform duration-300" :class="category.showChildren ? 'rotate-90' : ''" />
           </div>
-          <!-- Child categories -->
           <transition name="fade">
             <div v-show="category.showChildren" class="child-categories">
               <div v-for="child in category.children" :key="child.id">
@@ -196,7 +193,7 @@ const parentCategorySelected = (category) => {
                   :checked="selectedTerms.includes(child.slug)" 
                   type="checkbox" 
                   :value="child.slug" 
-                  @change="() => { checkboxChanged(child.slug); filterProductsByCategory(child.slug) }">
+                  @change="() => { checkboxChanged(child.slug, category.slug); }">
                 <label :for="child.slug">{{ child.name }}
                   <span v-if="showCount">({{ child.count || 0 }})</span>
                 </label>
