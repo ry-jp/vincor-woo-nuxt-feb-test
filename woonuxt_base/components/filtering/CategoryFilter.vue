@@ -42,6 +42,7 @@ onMounted(async () => {
                         id
                         name
                         slug
+                        count
                         parent {
                           node {
                             id
@@ -53,6 +54,7 @@ onMounted(async () => {
                     }
                   }
                   slug
+                  count
                   image {
                     sourceUrl(size: MEDIUM_LARGE)
                     altText
@@ -95,7 +97,7 @@ function processCategories(edges) {
   edges.forEach(edge => {
     const parentCategory = edge.node;
 
-    if (!parentCategory.parent) {
+    if (!parentCategory.parent && parentCategory.count > 0) {
       if (!categoriesMap.has(parentCategory.id)) {
         categoriesMap.set(parentCategory.id, { ...parentCategory, children: [], showChildren: false });
       }
@@ -103,16 +105,18 @@ function processCategories(edges) {
       if (parentCategory.children && parentCategory.children.edges) {
         parentCategory.children.edges.forEach(childEdge => {
           const childNode = childEdge.node;
-          if (!categoriesMap.has(childNode.id)) {
-            categoriesMap.set(childNode.id, { ...childNode, children: [] });
+          if (childNode.count > 0) {
+            if (!categoriesMap.has(childNode.id)) {
+              categoriesMap.set(childNode.id, { ...childNode, children: [] });
+            }
+            categoriesMap.get(parentCategory.id).children.push(categoriesMap.get(childNode.id));
           }
-          categoriesMap.get(parentCategory.id).children.push(categoriesMap.get(childNode.id));
         });
       }
     }
   });
 
-  return Array.from(categoriesMap.values()).filter(category => !category.parent);
+  return Array.from(categoriesMap.values()).filter(category => !category.parent && category.count > 0);
 }
 
 const { getFilter, setFilter, isFiltersActive } = await useFiltering();
@@ -145,7 +149,6 @@ const checkboxChanged = (childSlug, parentSlug) => {
   } else {
     selectedTerms.value.push(childSlug);
 
-    // Remove the parent category if a child is selected
     const parentIndex = selectedTerms.value.indexOf(parentSlug);
     if (parentIndex > -1) {
       selectedTerms.value.splice(parentIndex, 1);
