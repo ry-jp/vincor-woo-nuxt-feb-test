@@ -133,5 +133,5 @@ export function useFiltering() {
     });
   }
 
-  return { getFilter, setFilter, resetFilter, isFiltersActive, filterProducts };
+  return { getFilter, setFilter, resetFilter, isFiltersActive, filterProducts, updateProductList };
 }

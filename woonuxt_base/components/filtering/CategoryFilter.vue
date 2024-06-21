@@ -10,6 +10,11 @@ const route = useRoute();
 const isOpen = ref(props.open);
 const categories = ref([]);
 
+const filterProductsByCategory = (categoryId) => {
+  // Implementation of filtering logic
+  console.log(`Filtering products by category: ${categoryId}`);
+};
+
 // Load and process categories using $fetch
 onMounted(async () => {
   try {
