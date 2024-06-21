@@ -72,8 +72,9 @@ const colorVariableImage = computed(() => {
 
 <style lang="postcss">
 .product-card img {
-  @apply rounded-lg object-top object-cover w-full;
-  aspect-ratio: 1/1.125;
+  @apply rounded-lg object-top  w-full overflow-hidden;
+  aspect-ratio: 1/1;
+  
 }
 
 .product-card:hover {

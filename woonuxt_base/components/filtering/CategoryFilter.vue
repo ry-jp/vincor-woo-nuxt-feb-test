@@ -190,14 +190,14 @@ const parentCategorySelected = (category) => {
             <Icon name="ion:chevron-forward-outline" class="transform transition-transform duration-300" :class="category.showChildren ? 'rotate-90' : ''" />
           </div>
           <transition name="fade">
-            <div v-show="category.showChildren" class="child-categories">
+            <div v-show="category.showChildren" class="child-categories py-2 ">
               <div v-for="child in category.children" :key="child.id">
-                <input  :id="child.slug" 
+                <input  :id="child.slug" class="mr-2" 
                   :checked="selectedTerms.includes(child.slug)" 
                   type="checkbox" 
                   :value="child.slug" 
                   @change="() => { checkboxChanged(child.slug, category.slug); }">
-                <label :for="child.slug">{{ child.name }}
+                <label :for="child.slug" class="">{{ child.name }}
                   <span v-if="showCount">({{ child.count || 0 }})</span>
                 </label>
               </div>
