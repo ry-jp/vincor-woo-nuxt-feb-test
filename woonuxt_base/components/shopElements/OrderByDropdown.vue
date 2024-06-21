@@ -22,7 +22,6 @@ watch([orderby, order], () => {
       <option value="date">{{ $t('messages.general.latest') }}</option>
       <option value="alphabetically">{{ $t('messages.general.alphabetically') }}</option>
       <option value="price">{{ $t('messages.shop.price') }}</option>
-      <option value="rating">{{ $t('messages.shop.rating') }}</option>
       <option value="discount">{{ $t('messages.shop.discount') }}</option>
     </select>
   </div>
