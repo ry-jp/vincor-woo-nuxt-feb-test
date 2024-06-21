@@ -2,7 +2,6 @@
   <nav>
     <NuxtLink to="/" class="hover:text-blue-200">{{ $t('messages.general.home') }}</NuxtLink>
     <NuxtLink to="/products" class="hover:text-blue-200">{{ $t('messages.general.allProducts') }}</NuxtLink>
-    <NuxtLink to="/categories" class="hover:text-blue-200">{{ $t('messages.shop.category', 2) }}</NuxtLink>
     <NuxtLink to="/contact" class="hover:text-blue-200">{{ $t('messages.general.contact') }}</NuxtLink>
     <NuxtLink to="/about-us" class="hover:text-blue-200">About Us</NuxtLink>
     <NuxtLink to="/field-service" class="hover:text-blue-200">Field Service</NuxtLink>
