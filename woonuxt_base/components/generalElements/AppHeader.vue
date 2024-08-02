@@ -18,6 +18,9 @@ const { isShowingSearch } = useSearching();
         </NuxtLink>
         <SignInLink class="text-white" />
         <CartTrigger class="text-white" />
+        <NuxtLink to="https://cloud.vincor.com/" title="Wishlist">
+          <Icon class="text-white" name="ion:cloud-outline" size="20" />
+        </NuxtLink>
       </div>
     </div>
     <Transition name="scale-y" mode="out-in">

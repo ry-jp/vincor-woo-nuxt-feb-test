@@ -10,20 +10,9 @@
       >
         {{ post.title }}
       </button>
-      <!-- Add a new tab for the PDF document -->
-      <button
-        type="button"
-        :class="show === tabPosts.length ? 'active' : ''"
-        @click.prevent="showTab(tabPosts.length)"
-        v-if="fileExists"
-      >
-        Datasheet
-      </button>
     </nav>
     <div class="tab-contents">
-      <div class="font-light mt-8 prose" v-html="activeTab" v-if="show < tabPosts.length" />
-      <!-- Add an iframe to display the PDF document -->
-      <iframe class="w-full min-h-[1000px]" :src="pdfUrl" v-else />
+      <div class="font-light mt-8 prose" v-html="activeTab" />
     </div>
   </div>
 </template>
@@ -41,7 +30,6 @@ const props = defineProps({
 const posts = ref([]);
 const activeTab = ref('');
 const show = ref(0);
-const fileExists = ref(false);
 
 const fetchPosts = async (after = null) => {
   const response = await fetch('https://vincor.com/graphql', {
@@ -105,34 +93,13 @@ const tabPosts = computed(() => {
 
 const showTab = (index) => {
   show.value = index;
-  if (index < tabPosts.value.length) {
-    activeTab.value = tabPosts.value[index].content;
-  } else if (index === tabPosts.value.length && fileExists.value) {
-    activeTab.value = '';
-  }
-};
-
-const pdfUrl = computed(() => {
-  const sku = props.productSku;
-  return `https://files.vincor.com/${sku}.pdf`;
-});
-
-const checkPdfExists = async () => {
-  const response = await fetch(pdfUrl.value);
-  if (response.status === 200) {
-    fileExists.value = true;
-  } else if (response.status === 404) {
-    console.log("No document available for this product");
-  }
+  activeTab.value = tabPosts.value[index].content;
 };
 
 onMounted(async () => {
   await fetchPosts();
-  await checkPdfExists();
   if (tabPosts.value.length > 0) {
     showTab(0);
-  } else if (fileExists.value) {
-    show.value = tabPosts.value.length;
   }
 });
 </script>
