@@ -1,5 +1,5 @@
-query getPosts {
-  posts(where: {tag: "tab"}) {
+query getAllPosts($after: String) {
+  posts(first: 100, after: $after) {
     edges {
       node {
         id
@@ -10,15 +10,14 @@ query getPosts {
             node {
               id
               name
-              posts {
-                nodes {
-                  content
-                }
-              }
             }
           }
         }
       }
+    }
+    pageInfo {
+      endCursor
+      hasNextPage
     }
   }
 }

@@ -178,7 +178,7 @@ const parentCategorySelected = (category) => {
 
 <template>
   <div v-if="categories.length">
-    <div class="cursor-pointer flex font-semibold mt-8 justify-between items-center" @click="isOpen = !isOpen">
+    <div class="  cursor-pointer flex font-semibold mt-8 justify-between items-center" @click="isOpen = !isOpen">
       <span>{{ label || $t('messages.shop.category', 2) }}</span>
       <Icon name="ion:chevron-down-outline" class="transform transition-transform duration-300" :class="isOpen ? 'rotate-180' : ''" />
     </div>

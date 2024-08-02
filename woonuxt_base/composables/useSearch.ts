@@ -48,14 +48,15 @@ export function useSearching() {
     }
 
     return search
-      ? products.filter((product: Product) => {
-          const name = product.name?.toLowerCase();
-          const description = product.description ? product.description.toLowerCase() : null;
-          const shortDescription = product.shortDescription ? product.shortDescription.toLowerCase() : null;
-          const query = search.toLowerCase();
-          return name?.includes(query) ?? description?.includes(query) ?? shortDescription?.includes(query);
-        })
-      : products;
+    ? products.filter((product: Product) => {
+        const name = product.name?.toLowerCase();
+        const skuMatches = product.sku ? product.sku.toLowerCase().includes(search.toLowerCase()) : false;
+        const description = product.description ? product.description.toLowerCase() : '';
+        const shortDescription = product.shortDescription ? product.shortDescription.toLowerCase() : '';
+        const query = search.toLowerCase();
+        return name?.includes(query) || skuMatches || description.includes(query) || shortDescription.includes(query);
+      })
+    : products;
   }
 
   return { getSearchQuery, setSearchQuery, clearSearchQuery, searchProducts, isSearchActive, isShowingSearch, toggleSearch };

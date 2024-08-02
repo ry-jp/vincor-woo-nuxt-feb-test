@@ -4,7 +4,7 @@
       <button
         type="button"
         :class="show === index ? 'active' : ''"
-        @click.prevent="show = index; activeTab = post.content"
+        @click.prevent="showTab(index)"
         v-for="(post, index) in tabPosts"
         :key="post.id"
       >
@@ -13,78 +13,95 @@
     </nav>
     <div class="tab-contents">
       <div class="font-light mt-8 prose" v-html="activeTab" />
-      <!-- <div v-if="activeTab.title === 'Datasheet'" v-html="activeTab.content"></div>
-<div v-else>{{ activeTab.content }}</div> -->
     </div>
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref, computed, onMounted } from 'vue';
 
-export default {
-  props: {
-    productSku: {
-      type: String,
-      required: true,
-    },
+const props = defineProps({
+  productSku: {
+    type: String,
+    required: true,
   },
-  setup(props) {
-    const { data, error, loading } = useAsyncGql('getPosts');
-    const activeTab = ref('');
-    const initialTab = activeTab ? 0 : 1;
-    const show = ref(initialTab);
-
-    const posts = computed(() => {
-      if (data.value && data.value.posts) {
-        return data.value.posts.edges.map(({ node }) => ({
-          id: node.id,
-          title: node.title,
-          content: node.content,
-          tags: node.tags.edges.map(({ node }) => node.name),
-        }));
-      }
-      return [];
-    });
-
-    const tabPosts = computed(() => {
-  return posts.value
-    .filter(post => post.tags.includes(props.productSku))
-    .sort((a, b) => {
-      const aTagNumber = a.tags.find(tag => !isNaN(tag));
-      const bTagNumber = b.tags.find(tag => !isNaN(tag));
-      if (a.title === 'Datasheet') return 1;
-      if (b.title === 'Datasheet') return -1;
-      if (a.title === 'Specifications') return -1;
-      if (b.title === 'Specifications') return 1;
-      if (aTagNumber && bTagNumber) {
-        return parseInt(aTagNumber) - parseInt(bTagNumber);
-      }
-      return 0;
-    });
 });
 
-    const showTab = (index) => {
-      show.value = index;
-      activeTab.value = tabPosts.value[index].content;
-    };
+const posts = ref([]);
+const activeTab = ref('');
+const show = ref(0);
 
-//     const showTab = (index) => {
-//   show.value = index;
-//   activeTab.value = tabPosts.value[index];
-// };
+const fetchPosts = async (after = null) => {
+  const response = await fetch('https://vincor.com/graphql', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      query: `
+        query getAllPosts($after: String) {
+          posts(first: 100, after: $after) {
+            edges {
+              node {
+                id
+                content
+                title
+                tags {
+                  edges {
+                    node {
+                      id
+                      name
+                    }
+                  }
+                }
+              }
+            }
+            pageInfo {
+              endCursor
+              hasNextPage
+            }
+          }
+        }
+      `,
+      variables: { after },
+    }),
+  });
 
-    onMounted(() => {
-      if (tabPosts.value.length > 0) {
-        showTab(0);
-      }
-    });
-    console.log('posts:', posts.value);
-console.log('productSku:', props.productSku);
-console.log('tabPosts:', tabPosts.value);
-    return { tabPosts, activeTab, showTab, show };
-  },
+  const { data } = await response.json();
+  if (data) {
+    posts.value.push(...data.posts.edges.map(({ node }) => ({
+      id: node.id,
+      title: node.title,
+      content: node.content,
+      tags: node.tags.edges.map(({ node }) => node.name) || [],
+    })));
+    if (data.posts.pageInfo.hasNextPage) {
+      await fetchPosts(data.posts.pageInfo.endCursor);
+    }
+  }
 };
+
+const tabPosts = computed(() => {
+  return posts.value.filter(post => post.tags.includes(props.productSku)).sort((a, b) => {
+    if (a.title === 'Datasheet') return 1;
+    if (b.title === 'Datasheet') return -1;
+    if (a.title === 'Specifications') return -1;
+    if (b.title === 'Specifications') return 1;
+    return 0;
+  });
+});
+
+const showTab = (index) => {
+  show.value = index;
+  activeTab.value = tabPosts.value[index].content;
+};
+
+onMounted(async () => {
+  await fetchPosts();
+  if (tabPosts.value.length > 0) {
+    showTab(0);
+  }
+});
 </script>
 
 <style lang="postcss" scoped>
@@ -97,4 +114,3 @@ console.log('tabPosts:', tabPosts.value);
   @apply border-primary text-primary;
 }
 </style>
- 
