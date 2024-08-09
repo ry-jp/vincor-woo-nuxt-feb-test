@@ -10,6 +10,7 @@
       >
         {{ post.title }}
       </button>
+      <!-- Add a new tab for the PDF document -->
       <button
         type="button"
         :class="show === tabPosts.length ? 'active' : ''"
@@ -21,7 +22,8 @@
     </nav>
     <div class="tab-contents">
       <div class="font-light mt-8 prose" v-html="activeTab" v-if="show < tabPosts.length" />
-      <iframe class="w-full min-h-[1000px]" :src="pdfUrl" v-else-if="fileExists" />
+      <!-- Add an iframe to display the PDF document -->
+      <iframe class="w-full min-h-[1000px]" :src="pdfUrl" v-else />
     </div>
   </div>
 </template>
@@ -116,15 +118,11 @@ const pdfUrl = computed(() => {
 });
 
 const checkPdfExists = async () => {
-  try {
-    const response = await fetch(pdfUrl.value, { 
-      method: 'HEAD',
-      mode: 'no-cors'
-    });
-    fileExists.value = true; // If we reach this point, assume the file exists
-  } catch (error) {
-    console.error("Error checking PDF existence:", error);
-    fileExists.value = false;
+  const response = await fetch(pdfUrl.value);
+  if (response.status === 200) {
+    fileExists.value = true;
+  } else if (response.status === 404) {
+    console.log("No document available for this product");
   }
 };
 

@@ -22,6 +22,9 @@ query getProducts($after: String, $slug: [String], $first: Int = 9999, $orderby:
       ...ProductCategories
       ...SimpleProduct
       ...VariableProduct
+      featured
+      totalSales
+      dateOnSaleFrom
     }
   }
 }

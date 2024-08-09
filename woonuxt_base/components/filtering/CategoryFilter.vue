@@ -174,6 +174,13 @@ const parentCategorySelected = (category) => {
   setFilter('category', selectedTerms.value);
   console.log('Parent category selected:', category.name);
 };
+
+
+const sortedCategories = computed(() => {
+  return [...categories.value].sort((a, b) => a.name.localeCompare(b.name));
+});
+
+
 </script>
 
 <template>
@@ -184,7 +191,7 @@ const parentCategorySelected = (category) => {
     </div>
     <transition name="fade">
       <div v-show="isOpen" class="mt-3">
-        <div v-for="category in categories" :key="category.id" class="category-block">
+        <div v-for="category in sortedCategories" :key="category.id" class="category-block">
           <div @click="() => { parentCategorySelected(category); toggleVisibility(category); }" class="parent-category">
             {{ category.name }}
             <Icon name="ion:chevron-forward-outline" class="transform transition-transform duration-300" :class="category.showChildren ? 'rotate-90' : ''" />
